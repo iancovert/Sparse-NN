@@ -22,8 +22,8 @@ class RNASeq(Dataset):
     def __init__(self,
                  data,
                  labels=None,
-                 mean=None,
-                 std=None,
+                 mean=0,
+                 std=1,
                  device=None,
                  inds=None):
         super(RNASeq, self).__init__()
@@ -32,18 +32,12 @@ class RNASeq(Dataset):
         self.device = device
 
         # For input normalization.
-        if mean is not None:
-            assert mean.shape == (self.original_dim,)
-            self.mean_adjustment = True
-            self.mean = mean[np.newaxis]
-        else:
-            self.mean_adjustment = False
-        if std is not None:
-            assert std.shape == (self.original_dim,)
-            self.normalization = True
-            self.std = std[np.newaxis]
-        else:
-            self.normalization = False
+        if isinstance(mean, np.ndarray):
+            mean = mean[np.newaxis]
+        if isinstance(std, np.ndarray):
+            std = std[np.newaxis]
+        self.mean = mean
+        self.std = std
 
         # Set up Y.
         if labels is not None:
@@ -70,10 +64,8 @@ class RNASeq(Dataset):
 
     def set_inds(self, inds):
         x = self.data
-        if self.mean_adjustment:
-            x = x - self.mean
-        if self.normalization:
-            x = x / self.std
+        x = x - self.mean
+        x = x / self.std
 
         # Set inputs.
         if inds is not None:
@@ -169,8 +161,8 @@ def unsupervised_dataloaders(seed=123,
     # Calculate mean and std from training data.
     train_mean = np.mean(train, axis=0)
     train_std = np.std(train, axis=0)
-    mean = train_mean if mean_adjustment else None
-    std = train_std if normalization else None
+    mean = train_mean if mean_adjustment else 0
+    std = train_std if normalization else 1
     train_mean = torch.tensor(train_mean, device=device, dtype=torch.float32)
     train_std = torch.tensor(train_std, device=device, dtype=torch.float32)
 
@@ -234,8 +226,8 @@ def supervised_dataloaders(seed=123,
     # Calculate mean and std from training data.
     train_mean = np.mean(train, axis=0)
     train_std = np.std(train, axis=0)
-    mean = train_mean if mean_adjustment else None
-    std = train_std if normalization else None
+    mean = train_mean if mean_adjustment else 0
+    std = train_std if normalization else 1
     train_mean = torch.tensor(train_mean, device=device, dtype=torch.float32)
     train_std = torch.tensor(train_std, device=device, dtype=torch.float32)
 
