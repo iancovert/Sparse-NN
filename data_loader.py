@@ -121,7 +121,7 @@ class RNASeq(Dataset):
         self.output_inds = inds
 
     def get_shape(self):
-        return tuple(self.x.shape)
+        return tuple(self.data.shape)
 
 
 def split_data(data, seed=123, val_portion=0.1, test_portion=0.1):

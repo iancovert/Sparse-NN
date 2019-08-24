@@ -64,8 +64,8 @@ class SPINN:
               train_loader,
               val_loader,
               lr,
-              nepochs,
               mbsize,
+              nepochs,
               lam,
               check_every,
               check_convergence=True,
@@ -83,8 +83,8 @@ class SPINN:
           train_loader: training dataloader.
           val_loader: validation dataloader.
           lr: learning rate.
-          nepochs: number of epochs.
           mbsize: minibatch size.
+          nepochs: number of epochs.
           lam: regularization strength.
           check_every: number of gradient steps between loss checks.
           check_convergence: whether to check for convergence.
@@ -173,8 +173,8 @@ class SPINN:
                       train_loader,
                       val_loader,
                       lr,
-                      nepochs,
                       mbsize,
+                      nepochs,
                       lam,
                       check_every,
                       check_convergence=True,
@@ -190,8 +190,8 @@ class SPINN:
           train_loader: training dataloader.
           val_loader: validation dataloader.
           lr: learning rate.
-          nepochs: number of epochs.
           mbsize: minibatch size.
+          nepochs: number of epochs.
           lam: regularization strength.
           check_every: number of gradient steps between loss checks.
           check_convergence: whether to check for convergence.
@@ -350,13 +350,16 @@ def train_model_sequence(trial_results,
                          val_loader,
                          test_loader,
                          lr,
-                         nepochs,
                          mbsize,
+                         nepochs,
                          check_every,
                          check_convergence=True,
                          lookback=5,
                          loss_fn=MSELoss,
+                         evaluation_loss_fn=None,
+                         task_name='task',
                          imputation=True,
+                         warm_start=True,
                          verbose=False):
     '''
     Train sequence of debiased models after identifying feature subsets.
@@ -369,33 +372,30 @@ def train_model_sequence(trial_results,
       val_loader: validation dataloader.
       test_loader: test dataloader.
       lr: learning rate.
-      nepochs: number of epochs.
       mbsize: minibatch size.
+      nepochs: number of epochs.
       check_every: number of gradient steps between loss checks.
       check_convergence: whether to check for convergence.
       lookback: window for determining whether loss is still going down.
       loss_fn: loss function.
+      evaluation_loss_fn: loss function for evaluation trained models.
+      task_name: name of task, for saving results in dicts.
       imputation: whether the task is self reconstruction. If True, input
         features are excluded from output.
+      warm_start: whether to warm start models, when possible.
       verbose: verbosity.
     '''
     # Go from largest to smallest number of inputs.
     order = np.argsort([len(subset['inds']) for subset in trial_results])[::-1]
     trial_results = np.array(trial_results)[order]
 
-    # Ensure warm start is possible.
-    for i in range(1, len(trial_results)):
-        assert np.all([ind in trial_results[i - 1]['inds'] for ind in
-                       trial_results[i]['inds']])
-
     _, original_dim = train_loader.dataset.get_shape()
     device = train_loader.dataset.device
 
-    # For warm start.
-    prev_model = None
-    prev_inds = None
+    if evaluation_loss_fn is None:
+        evaluation_loss_fn = loss_fn
 
-    for subset in trial_results:
+    for i, subset in enumerate(trial_results):
         # Set up predictors and target.
         inds = subset['inds']
         num = len(inds)
@@ -411,9 +411,15 @@ def train_model_sequence(trial_results,
             val_loader.dataset.set_output_inds(np.logical_not(sparsity))
             test_loader.dataset.set_output_inds(np.logical_not(sparsity))
 
-        # Warm start, except for the first model training.
-        if prev_model is not None:
+        # Warm start if possible.
+        do_warm_start = (
+            warm_start and
+            i > 0 and
+            np.all([ind in trial_results[i - 1]['inds'] for ind in inds]))
+
+        if do_warm_start:
             # Shrink inputs.
+            prev_inds = trial_results[i - 1]['inds']
             indicator = torch.tensor(np.array(
                 [i in inds for i in prev_inds], dtype=int)).byte()
             model.shrink_inputs(indicator)
@@ -428,10 +434,24 @@ def train_model_sequence(trial_results,
                 indicator = torch.tensor(
                     np.array([i in prev_output_inds for i in output_inds],
                              dtype=int)).byte()
-                linear = nn.Linear(prev_hidden, num_outputs).cuda(device=device)
+                linear = nn.Linear(prev_hidden, num_outputs).to(device=device)
                 linear.weight.data[indicator] = model.fc[-1].weight
                 linear.bias.data[indicator] = model.fc[-1].bias
                 model.fc[-1] = linear
+        elif i > 0:
+            # Input layer.
+            model.fc[0] = nn.Linear(
+                num, int(model.fc[0].weight.shape[0])).to(device=device)
+
+            # Intermediate layers.
+            for i in range(1, len(model.fc) - 1):
+                W = model.fc[i].weight
+                model.fc[i] = nn.Linear(
+                    int(W.shape[1]), int(W.shape[0])).to(device=device)
+
+            # Output layer.
+            model.fc[-1] = nn.Linear(int(model.fc[-1].weight.shape[1]),
+                                     original_dim - num).to(device=device)
 
         # Train model.
         trainer = MLPTrain(model)
@@ -448,15 +468,11 @@ def train_model_sequence(trial_results,
                       verbose=verbose)
 
         # Record performance.
-        subset['nonlinear'] = {
-            'train': validate(model, train_loader, loss_fn).item(),
-            'val': validate(model, val_loader, loss_fn).item(),
-            'test': validate(model, test_loader, loss_fn).item()
+        subset[task_name] = {
+            'train': validate(model, train_loader, evaluation_loss_fn).item(),
+            'val': validate(model, val_loader, evaluation_loss_fn).item(),
+            'test': validate(model, test_loader, evaluation_loss_fn).item()
         }
-
-        # For next model
-        prev_inds = np.sort(inds)
-        prev_model = model
 
         print('Done with {} variables'.format(num))
 

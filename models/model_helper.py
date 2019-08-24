@@ -61,6 +61,7 @@ class ConcreteDropout(nn.Module):
                  penalty='linear',
                  expectation_trick=False):
         super(ConcreteDropout, self).__init__()
+        self.input_size = input_size
 
         # Set up initial dropout rates.
         if isinstance(p, torch.Tensor):
@@ -138,6 +139,9 @@ class ConcreteDropout(nn.Module):
         '''Ensure logits are not too large or too small.'''
         self.logit.data = torch.clamp(self.logit, min=-10.0, max=10.0)
 
+    def extra_repr(self):
+        return 'in_features={}'.format(self.input_size)
+
 
 class GaussianNoise(nn.Module):
     '''
@@ -149,6 +153,7 @@ class GaussianNoise(nn.Module):
     '''
     def __init__(self, input_size, std):
         super(GaussianNoise, self).__init__()
+        self.input_size = input_size
 
         # Set up initial standard deviations.
         if isinstance(std, torch.Tensor):
@@ -179,3 +184,6 @@ class GaussianNoise(nn.Module):
 
     def get_std(self):
         return self.get_std_().detach()[0]
+
+    def extra_repr(self):
+        return 'in_features={}'.format(self.input_size)

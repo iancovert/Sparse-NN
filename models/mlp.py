@@ -41,22 +41,23 @@ class MLP(nn.Module):
         return self.output_activation(x)
 
     def shrink_inputs(self, inds):
-        W = self.fc[0].weight
-        B = self.fc[0].bias
-        input_size = int(W.shape[1])
+        W, B = self.fc[0].weight, self.fc[0].bias
+        hidden, input_size = int(W.shape[0]), int(W.shape[1])
 
         # Convert inds to torch.Tensor.
         if not isinstance(inds, torch.Tensor):
             if len(inds) < input_size:
                 inds = np.array(
-                    [i in inds for i in range(input_size)], dtype=bool)
+                    [i in inds for i in range(input_size)], dtype=int)
             elif isinstance(inds, list):
-                inds = np.array(inds, dtype=bool)
+                inds = np.array(inds, dtype=int)
+            elif isinstance(inds, np.ndarray):
+                inds = inds.astype(int)
             inds = torch.tensor(inds).byte()
         new_size = int(torch.sum(inds.int()))
 
         # Create new first layer.
-        linear = nn.Linear(new_size, input_size)
+        linear = nn.Linear(new_size, hidden).to(device=W.device)
         linear.weight.data = W[:, inds]
         linear.bias.data = B
         self.fc[0] = linear
@@ -125,6 +126,18 @@ class BernoulliMLP(MLP):
         return super(BernoulliMLP, self).forward(x)
 
     def shrink_inputs(self, inds):
+        # Convert inds to torch.Tensor.
+        input_size = int(self.fc[0].weight.shape[1])
+        if not isinstance(inds, torch.Tensor):
+            if len(inds) < input_size:
+                inds = np.array(
+                    [i in inds for i in range(input_size)], dtype=int)
+            elif isinstance(inds, list):
+                inds = np.array(inds, dtype=int)
+            elif isinstance(inds, np.ndarray):
+                inds = inds.astype(int)
+            inds = torch.tensor(inds).byte()
+
         super(BernoulliMLP, self).shrink_inputs(inds)
 
         # Adjust ConcreteDropout module.
@@ -172,6 +185,18 @@ class GaussianMLP(MLP):
         return super(GaussianMLP, self).forward(x)
 
     def shrink_inputs(self, inds):
+        # Convert inds to torch.Tensor.
+        input_size = int(self.fc[0].weight.shape[1])
+        if not isinstance(inds, torch.Tensor):
+            if len(inds) < input_size:
+                inds = np.array(
+                    [i in inds for i in range(input_size)], dtype=int)
+            elif isinstance(inds, list):
+                inds = np.array(inds, dtype=int)
+            elif isinstance(inds, np.ndarray):
+                inds = inds.astype(int)
+            inds = torch.tensor(inds).byte()
+
         super(GaussianMLP, self).shrink_inputs(inds)
 
         # Adjust GaussianNoise module.
