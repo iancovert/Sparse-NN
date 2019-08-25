@@ -4,11 +4,11 @@ The `Sparse-NN` repository implements methods for sparsifying neural networks (i
 
 ## Installation
 
-Please download the code by cloning the repository. To run it you'll need `Python >= 3`, `numpy`, `scipy`, `pandas`, `sklearn`, and `PyTorch >= 1.0.0`.
+Please download the code by cloning the repository. To run it you'll need `Python >= 3`, `numpy`, `scipy`, `pandas`, `sklearn`, and `PyTorch >= 1.2.0`.
 
 ## How it works
 
-The code is structured so that users can specify a base model that relies on all features, and then learn a sparse input neural network (SPINN) through either recursive feature elimination or a single ranking step. Base models are implemented in `models/mlp.py`, and SPINNs are implemented in `models/spinn.py`.
+The code is structured so that users must specify a base model that relies on all features, and then learn a sparse input neural network (SPINN) through either recursive feature elimination or a single ranking step. Base models are implemented in `models/mlp.py`, and SPINNs are implemented in `models/spinn.py`.
 
 Five feature ranking methods are available here to use as part of the feature selection algorithm:
 
@@ -21,11 +21,11 @@ Five feature ranking methods are available here to use as part of the feature se
 
 Each of the ranking methods leads to slightly different feature selection. The methods that tend to achieve the best performance with a small number of features are **Bernoulli noise**, **Gaussian noise**, and **feature imputation**. The methods that are most consistent with the features they select are **Gaussian noise** and **Bernoulli noise**.
 
-To perform feature selection with these methods, a small amount of hyperparameter tuning is required. In our experiments we chose the model architecture and optimization hyperparameters that led to an accurate model when relying on all features.
+To perform feature selection with these methods, a small amount of hyperparameter tuning is required. In our experiments, we chose the model architecture and optimization hyperparameters that led to an accurate model when relying on all features.
 
 ## Unsupervised feature selection
 
-In a paper that is under review, we proposed a method for selecting features *without* a specific supervised learning task in mind. The methods we developed are promising for selecting a small number of features in biological applications, e.g., high dimensional genetic data.
+In a paper that is under review, we proposed a method for selecting features without a specific supervised learning task in mind. The methods we developed are promising for selecting a small number of features in biological applications, e.g., high dimensional genetic data.
 
 The mathematical theory leads to an intuitive conclusion: when forced to observe a subset of features, the most informative features are those that are highly predictive of the unobserved ones. In practice, we suggest learning an input-sparse autoencoder (ISAE). Feel free to reach out for a preprint.
 

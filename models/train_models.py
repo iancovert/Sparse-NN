@@ -109,13 +109,14 @@ class MLPTrain:
 
         # Set parameters of train_loader.
         train_loader.batch_sampler.batch_size = mbsize
-        train_loader.batch_sampler.sampler.num_samples = mbsize * check_every
+        train_loader.batch_sampler.sampler._num_samples = mbsize * check_every
 
         # For optimization.
         model = self.model
         optimizer = optim.Adam(model.parameters(), lr=lr)
         loss_tracker = AverageMeter()
         min_criterion = np.inf
+        min_epoch = 0
 
         done = False
         epoch = 0

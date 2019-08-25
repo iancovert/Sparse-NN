@@ -150,9 +150,8 @@ class SPINN:
             top_scores = sorted_scores[:k].cpu().data.numpy()
 
             # Record this subset of features.
-            inds = torch.tensor(np.array(
-                [i in top_scores for i in
-                 range(len(scores))], dtype=int)).byte()
+            inds = torch.tensor(
+                np.array([i in top_scores for i in range(len(scores))]))
             included = included[inds]
             included_np = included.cpu().data.numpy()
             self.subsets.append(included_np)
@@ -399,8 +398,7 @@ def train_model_sequence(trial_results,
         # Set up predictors and target.
         inds = subset['inds']
         num = len(inds)
-        sparsity = np.array(
-            [i in inds for i in range(original_dim)], dtype=bool)
+        sparsity = np.array([i in inds for i in range(original_dim)])
 
         train_loader.dataset.set_inds(sparsity)
         val_loader.dataset.set_inds(sparsity)
@@ -420,8 +418,7 @@ def train_model_sequence(trial_results,
         if do_warm_start:
             # Shrink inputs.
             prev_inds = trial_results[i - 1]['inds']
-            indicator = torch.tensor(np.array(
-                [i in inds for i in prev_inds], dtype=int)).byte()
+            indicator = torch.tensor(np.array([i in inds for i in prev_inds]))
             model.shrink_inputs(indicator)
 
             if imputation:
@@ -432,8 +429,7 @@ def train_model_sequence(trial_results,
                 prev_output_inds = [i for i in range(original_dim)
                                     if i not in prev_inds]
                 indicator = torch.tensor(
-                    np.array([i in prev_output_inds for i in output_inds],
-                             dtype=int)).byte()
+                    np.array([i in prev_output_inds for i in output_inds]))
                 linear = nn.Linear(prev_hidden, num_outputs).to(device=device)
                 linear.weight.data[indicator] = model.fc[-1].weight
                 linear.bias.data[indicator] = model.fc[-1].bias

@@ -47,13 +47,12 @@ class MLP(nn.Module):
         # Convert inds to torch.Tensor.
         if not isinstance(inds, torch.Tensor):
             if len(inds) < input_size:
-                inds = np.array(
-                    [i in inds for i in range(input_size)], dtype=int)
+                inds = np.array([i in inds for i in range(input_size)])
             elif isinstance(inds, list):
-                inds = np.array(inds, dtype=int)
+                inds = np.array(inds, dtype=bool)
             elif isinstance(inds, np.ndarray):
-                inds = inds.astype(int)
-            inds = torch.tensor(inds).byte()
+                inds = inds.astype(bool)
+            inds = torch.tensor(inds)
         new_size = int(torch.sum(inds.int()))
 
         # Create new first layer.
@@ -130,13 +129,12 @@ class BernoulliMLP(MLP):
         input_size = int(self.fc[0].weight.shape[1])
         if not isinstance(inds, torch.Tensor):
             if len(inds) < input_size:
-                inds = np.array(
-                    [i in inds for i in range(input_size)], dtype=int)
+                inds = np.array([i in inds for i in range(input_size)])
             elif isinstance(inds, list):
-                inds = np.array(inds, dtype=int)
+                inds = np.array(inds, dtype=bool)
             elif isinstance(inds, np.ndarray):
-                inds = inds.astype(int)
-            inds = torch.tensor(inds).byte()
+                inds = inds.astype(bool)
+            inds = torch.tensor(inds)
 
         super(BernoulliMLP, self).shrink_inputs(inds)
 
@@ -189,13 +187,12 @@ class GaussianMLP(MLP):
         input_size = int(self.fc[0].weight.shape[1])
         if not isinstance(inds, torch.Tensor):
             if len(inds) < input_size:
-                inds = np.array(
-                    [i in inds for i in range(input_size)], dtype=int)
+                inds = np.array([i in inds for i in range(input_size)])
             elif isinstance(inds, list):
-                inds = np.array(inds, dtype=int)
+                inds = np.array(inds, dtype=bool)
             elif isinstance(inds, np.ndarray):
-                inds = inds.astype(int)
-            inds = torch.tensor(inds).byte()
+                inds = inds.astype(bool)
+            inds = torch.tensor(inds)
 
         super(GaussianMLP, self).shrink_inputs(inds)
 

@@ -72,15 +72,13 @@ class RNASeq(Dataset):
             if isinstance(inds, list):
                 if len(inds) < self.original_dim:
                     inds = np.array(
-                        [i in inds for i in range(self.original_dim)],
-                        dtype=bool)
+                        [i in inds for i in range(self.original_dim)])
                 else:
                     inds = np.array(inds, dtype=bool)
             elif isinstance(inds, np.ndarray):
                 if len(inds) < self.original_dim:
                     inds = np.array(
-                        [i in inds for i in range(self.original_dim)],
-                        dtype=bool)
+                        [i in inds for i in range(self.original_dim)])
             else:
                 raise ValueError('inds must be list or np.ndarray')
             x = x[:, inds]
@@ -101,15 +99,13 @@ class RNASeq(Dataset):
             if isinstance(inds, list):
                 if len(inds) < self.original_dim:
                     inds = np.array(
-                        [i in inds for i in range(self.original_dim)],
-                        dtype=bool)
+                        [i in inds for i in range(self.original_dim)])
                 else:
                     inds = np.array(inds, dtype=bool)
             elif isinstance(inds, np.ndarray):
                 if len(inds) < self.original_dim:
                     inds = np.array(
-                        [i in inds for i in range(self.original_dim)],
-                        dtype=bool)
+                        [i in inds for i in range(self.original_dim)])
             else:
                 raise ValueError('inds must be list or np.ndarray')
             y = y[:, inds]
