@@ -7,13 +7,7 @@ from models.mlp import MLP, DropoutMLP, BernoulliMLP, GaussianMLP
 
 def MSELoss(pred, target):
     '''Calculate MSE. Sum over output dimension, mean over batch.'''
-    if isinstance(target, np.ndarray):
-        return np.sum(np.mean((pred - target) ** 2, axis=0))
-    elif isinstance(target, torch.Tensor):
-        return torch.sum(torch.mean((pred - target) ** 2, dim=0))
-    else:
-        raise ValueError(
-            'unsupported target data type: {}'.format(type(target)))
+    return torch.mean(torch.sum((pred - target) ** 2, dim=1))
 
 
 def Accuracy(pred, target):
